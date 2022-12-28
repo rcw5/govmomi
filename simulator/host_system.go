@@ -309,3 +309,48 @@ func (h *HostSystem) ReconnectHostTask(ctx *Context, spec *types.ReconnectHost_T
 		},
 	}
 }
+
+func (h *HostSystem) ShutdownHostTask(ctx *Context, spec *types.ShutdownHost_Task) soap.HasFault {
+	task := CreateTask(h, "shutdownHost", func(t *Task) (types.AnyType, types.BaseMethodFault) {
+		if !h.Runtime.InMaintenanceMode && !spec.Force {
+			return nil, &types.ResourceInUse{
+				Type: h.Self.Type,
+				Name: h.Name,
+			}
+		}
+		h.Runtime.PowerState = types.HostSystemPowerStatePoweredOff
+		return nil, nil
+	})
+
+	return &methods.ShutdownHost_TaskBody{
+		Res: &types.ShutdownHost_TaskResponse{
+			Returnval: task.Run(ctx),
+		},
+	}
+}
+
+func (h *HostSystem) PowerDownHostToStandByTask(ctx *Context, spec *types.PowerDownHostToStandBy_Task) soap.HasFault {
+	task := CreateTask(h, "powerDownHostToStandBy", func(t *Task) (types.AnyType, types.BaseMethodFault) {
+		h.Runtime.PowerState = types.HostSystemPowerStateStandBy
+		return nil, nil
+	})
+
+	return &methods.PowerDownHostToStandBy_TaskBody{
+		Res: &types.PowerDownHostToStandBy_TaskResponse{
+			Returnval: task.Run(ctx),
+		},
+	}
+}
+
+func (h *HostSystem) PowerUpHostFromStandByTask(ctx *Context, spec *types.PowerUpHostFromStandBy_Task) soap.HasFault {
+	task := CreateTask(h, "powerUpHostFromStandBy", func(t *Task) (types.AnyType, types.BaseMethodFault) {
+		h.Runtime.PowerState = types.HostSystemPowerStatePoweredOn
+		return nil, nileeertertrertrertrerererrte       m
+	})
+
+	return &methods.PowerUpHostFromStandBy_TaskBody{
+		Res: &types.PowerUpHostFromStandBy_TaskResponse{
+			Returnval: task.Run(ctx),
+		},
+	}
+}

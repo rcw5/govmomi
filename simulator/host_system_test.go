@@ -257,3 +257,154 @@ func TestDisconnect(t *testing.T) {
 			types.HostSystemConnectionStateConnected, hs.Runtime.ConnectionState)
 	}
 }
+
+func TestPowerDownHostToStandBy(t *testing.T) {
+	ctx := context.Background()
+	m := ESX()
+
+	defer m.Remove()
+
+	err := m.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s := m.Service.NewServer()
+	defer s.Close()
+
+	c := m.Service.client
+
+	hs := Map.Get(esx.HostSystem.Reference()).(*HostSystem)
+	host := object.NewHostSystem(c, hs.Self)
+
+	task, err := host.PowerDownHostToStandBy(ctx, 30, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = task.Wait(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if hs.Runtime.PowerState != types.HostSystemPowerStateStandBy {
+		t.Fatalf("expect PowerState to be %s; got %s",
+			types.HostSystemPowerStateStandBy, hs.Runtime.PowerState)
+	}
+}
+
+func TestPowerUpHostFromStandBy(t *testing.T) {
+	ctx := context.Background()
+	m := ESX()
+
+	defer m.Remove()
+
+	err := m.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s := m.Service.NewServer()
+	defer s.Close()
+
+	c := m.Service.client
+
+	hs := Map.Get(esx.HostSystem.Reference()).(*HostSystem)
+	host := object.NewHostSystem(c, hs.Self)
+
+	task, err := host.PowerDownHostToStandBy(ctx, 30, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = task.Wait(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	task, err = host.PowerUpHostFromStandBy(ctx, 30)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = task.Wait(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if hs.Runtime.PowerState != types.HostSystemPowerStatePoweredOn {
+		t.Fatalf("expect PowerState to be %s; got %s",
+			types.HostSystemPowerStatePoweredOn, hs.Runtime.PowerState)
+	}
+}
+
+func TestShutdownHost(t *testing.T) {
+	ctx := context.Background()
+	m := ESX()
+
+	defer m.Remove()
+
+	err := m.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s := m.Service.NewServer()
+	defer s.Close()
+
+	c := m.Service.client
+
+	hs := Map.Get(esx.HostSystem.Reference()).(*HostSystem)
+	host := object.NewHostSystem(c, hs.Self)
+
+	task, err := host.ShutdownHost(ctx, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = task.Wait(ctx)
+	if err == nil {
+		t.Fatal("expect err because host cannot be shutdown unless in maintenance mode or force is set")
+	}
+
+	task, err = host.EnterMaintenanceMode(ctx, 30, true, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = task.Wait(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	task, err = host.ShutdownHost(ctx, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = task.Wait(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hs.Runtime.PowerState != types.HostSystemPowerStatePoweredOff {
+		t.Fatalf("expect PowerState to be %s; got %s",
+			types.HostSystemPowerStatePoweredOff, hs.Runtime.PowerState)
+	}
+
+	secondHs := Map.Get(esx.HostSystem.Reference()).(*HostSystem)
+	secondHost := object.NewHostSystem(c, secondHs.Self)
+	task, err = secondHost.ShutdownHost(ctx, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = task.Wait(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if secondHs.Runtime.PowerState != types.HostSystemPowerStatePoweredOff {
+		t.Fatalf("expect PowerState to be %s; got %s",
+			types.HostSystemPowerStatePoweredOff, secondHs.Runtime.PowerState)
+	}
+}

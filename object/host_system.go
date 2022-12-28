@@ -152,3 +152,46 @@ func (h HostSystem) ExitMaintenanceMode(ctx context.Context, timeout int32) (*Ta
 
 	return NewTask(h.c, res.Returnval), nil
 }
+
+func (h HostSystem) PowerDownHostToStandBy(ctx context.Context, timeout int32, evacuate bool) (*Task, error) {
+	req := types.PowerDownHostToStandBy_Task{
+		This:                  h.Reference(),
+		TimeoutSec:            timeout,
+		EvacuatePoweredOffVms: types.NewBool(evacuate),
+	}
+
+	res, err := methods.PowerDownHostToStandBy_Task(ctx, h.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(h.c, res.Returnval), nil
+}
+
+func (h HostSystem) PowerUpHostFromStandBy(ctx context.Context, timeout int32) (*Task, error) {
+	req := types.PowerUpHostFromStandBy_Task{
+		This:       h.Reference(),
+		TimeoutSec: timeout,
+	}
+
+	res, err := methods.PowerUpHostFromStandBy_Task(ctx, h.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(h.c, res.Returnval), nil
+}
+
+func (h HostSystem) ShutdownHost(ctx context.Context, force bool) (*Task, error) {
+	req := types.ShutdownHost_Task{
+		This:  h.Reference(),
+		Force: force,
+	}
+
+	res, err := methods.ShutdownHost_Task(ctx, h.c, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTask(h.c, res.Returnval), nil
+}
